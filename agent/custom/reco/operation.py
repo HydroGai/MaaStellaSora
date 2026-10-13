@@ -173,7 +173,28 @@ class FreeCoopButtonRecognition(CustomRecognition):
         
         reco_result = context.run_recognition("猎影合围_协助_协助讨伐按钮", argv.image)
         if not (reco_result and reco_result.hit and reco_result.best_result):
-            logger.debug("未找到协助讨伐按钮")
+            # 若基础配置未匹配到（如特定区服未覆盖无偿标签），使用包含无偿协助的预期文本进行覆盖重试
+            reco_result = context.run_recognition(
+                "猎影合围_协助_协助讨伐按钮",
+                argv.image,
+                pipeline_override={
+                    "猎影合围_协助_协助讨伐按钮": {
+                        "recognition": {
+                            "param": {
+                                "expected": [
+                                    "协助讨伐",
+                                    "无偿协助",
+                                    "協助討伐",
+                                    "無償協助"
+                                ]
+                            }
+                        }
+                    }
+                }
+            )
+
+        if not (reco_result and reco_result.hit and reco_result.best_result):
+            logger.debug("未找到协助讨伐/无偿协助按钮")
             return CustomRecognition.AnalyzeResult(box=None, detail={}) #未找到协助按钮，继续追踪
 
         btn_box = reco_result.best_result.box
