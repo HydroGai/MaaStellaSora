@@ -505,10 +505,7 @@
         "recognition": {
             "type": "OCR",
             "param": {
-                "expected": [
-                    "可以讨伐"
-                    //猜的
-                ],
+                "expected": [], // 待补充
                 "roi": [
                     900,
                     300,
@@ -688,7 +685,9 @@
         "recognition": {
             "type": "OCR",
             "param": {
-                "expected": [], //内容未知，需要补充
+                "expected": [
+                    "出发"
+                ],
                 "roi": [
                     1112,
                     652,
@@ -793,7 +792,9 @@
         "recognition": {
             "type": "OCR",
             "param": {
-                "expected": [], //内容未知，需要补充
+                "expected": [
+                    "协助讨伐"
+                ],
                 "roi": [
                     100,
                     15,
