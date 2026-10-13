@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Any
+
 import numpy as np
 
 from maa.agent.agent_server import AgentServer
@@ -132,10 +135,34 @@ class LackOfHuntLicenseRecognition(CustomRecognition):
 
         return CustomRecognition.AnalyzeResult(box=(1, 1, 1, 1), detail={})
 
+@dataclass
 class FreeCoopState:
     target_count: int = 5
     completed_count: int = 0
     current_is_free: bool = False
+
+
+_context_coop_states: dict[Any, FreeCoopState] = {}
+
+
+def _get_free_coop_state(context: Context, argv: Any = None) -> FreeCoopState:
+    """获取当前任务上下文绑定的无偿协助运行状态。
+
+    优先依据当前任务的 task_id 或 context 句柄索引，避免多任务并发时共享类属性导致状态互相污染。
+    """
+    key = getattr(getattr(argv, "task_detail", None), "task_id", None)
+    if key is None and hasattr(context, "_handle") and hasattr(context._handle, "value"):
+        key = context._handle.value
+    if key is None:
+        key = id(context)
+
+    if key not in _context_coop_states:
+        if len(_context_coop_states) > 50:
+            for old_key in list(_context_coop_states.keys())[:-20]:
+                _context_coop_states.pop(old_key, None)
+        _context_coop_states[key] = FreeCoopState()
+    return _context_coop_states[key]
+
 
 @AgentServer.custom_action("free_coop_init")
 class FreeCoopInit(CustomAction):
@@ -150,27 +177,32 @@ class FreeCoopInit(CustomAction):
                     target = int(val)
                 except (ValueError, TypeError):
                     target = 5
-        FreeCoopState.target_count = max(1, target)
-        FreeCoopState.completed_count = 0
-        FreeCoopState.current_is_free = False
-        logger.info(f"猎影合围无偿协助任务初始化，目标次数: {FreeCoopState.target_count}")
+
+        state = _get_free_coop_state(context, argv)
+        state.target_count = max(1, target)
+        state.completed_count = 0
+        state.current_is_free = False
+        logger.info(f"猎影合围无偿协助任务初始化，目标次数: {state.target_count}")
         return True
+
 
 @AgentServer.custom_recognition("free_coop_finish_recognition")
 class FreeCoopFinishRecognition(CustomRecognition):
-    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> CustomRecognition.AnalyzeResult: #检查无偿协助是否已经达到目标次数
-        if FreeCoopState.completed_count >= FreeCoopState.target_count:
-            logger.info(f"无偿协助已达到目标次数 ({FreeCoopState.completed_count}/{FreeCoopState.target_count})，准备退出")
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> CustomRecognition.AnalyzeResult:  # 检查无偿协助是否已经达到目标次数
+        state = _get_free_coop_state(context, argv)
+        if state.completed_count >= state.target_count:
+            logger.info(f"无偿协助已达到目标次数 ({state.completed_count}/{state.target_count})，准备退出")
             return CustomRecognition.AnalyzeResult(box=(1, 1, 1, 1), detail={})
-        return CustomRecognition.AnalyzeResult(box=None, detail={}) #未达到目标次数，继续追踪
+        return CustomRecognition.AnalyzeResult(box=None, detail={})  # 未达到目标次数，继续追踪
+
 
 @AgentServer.custom_recognition("free_coop_button_recognition")
 class FreeCoopButtonRecognition(CustomRecognition):
-    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> CustomRecognition.AnalyzeResult: #识别协助按钮。若有许可证先消耗许可证；若为无偿协助且未满次数则执行协助
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> CustomRecognition.AnalyzeResult:  # 识别协助按钮。若有许可证先消耗许可证；若为无偿协助且未满次数则执行协助
+        state = _get_free_coop_state(context, argv)
+        if state.completed_count >= state.target_count:
+            return CustomRecognition.AnalyzeResult(box=None, detail={})  # 已达目标次数，不执行协助
 
-        if FreeCoopState.completed_count >= FreeCoopState.target_count:
-            return CustomRecognition.AnalyzeResult(box=None, detail={}) #已达目标次数，不执行协助
-        
         reco_result = context.run_recognition("猎影合围_协助_协助讨伐按钮", argv.image)
         if not (reco_result and reco_result.hit and reco_result.best_result):
             # 若基础配置未匹配到（如特定区服未覆盖无偿标签），使用包含无偿协助的预期文本进行覆盖重试
@@ -195,7 +227,7 @@ class FreeCoopButtonRecognition(CustomRecognition):
 
         if not (reco_result and reco_result.hit and reco_result.best_result):
             logger.debug("未找到协助讨伐/无偿协助按钮")
-            return CustomRecognition.AnalyzeResult(box=None, detail={}) #未找到协助按钮，继续追踪
+            return CustomRecognition.AnalyzeResult(box=None, detail={})  # 未找到协助按钮，继续追踪
 
         btn_box = reco_result.best_result.box
         btn_text = reco_result.best_result.text or ""
@@ -203,30 +235,32 @@ class FreeCoopButtonRecognition(CustomRecognition):
         # 判断是否为无偿协助：
         # 如果许可证数量为0，或者按钮文字包含"無償"，则判定为无偿协助 除台服外其他区服未知(日服或为"救援参加")
         is_free = False
-        if count == 0 or "無償" in btn_text or "无偿" in btn_text: #此处判断需要完善各区服文本以加强判断
+        if count == 0 or "無償" in btn_text or "无偿" in btn_text:  # 此处判断需要完善各区服文本以加强判断
             is_free = True
         elif count is not None and count > 0:
             is_free = False
         else:
-            is_free = ("無償" in btn_text or "无偿" in btn_text) #此处判断需要完善各区服文本以加强判断
+            is_free = ("無償" in btn_text or "无偿" in btn_text)  # 此处判断需要完善各区服文本以加强判断
 
-        FreeCoopState.current_is_free = is_free
+        state.current_is_free = is_free
         if is_free:
-            logger.info(f"开始第 {FreeCoopState.completed_count + 1} 次无偿协助 (目标: {FreeCoopState.target_count} 次)")
+            logger.info(f"开始第 {state.completed_count + 1} 次无偿协助 (目标: {state.target_count} 次)")
         else:
             logger.info(f"许可证剩余 {count}，先进行正常协助消耗许可证")
 
         return CustomRecognition.AnalyzeResult(box=btn_box, detail={})
 
+
 @AgentServer.custom_action("free_coop_battle_finish")
 class FreeCoopBattleFinish(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
-        if FreeCoopState.current_is_free:
-            FreeCoopState.completed_count += 1
-            logger.info(f"完成一次无偿协助，当前进度: {FreeCoopState.completed_count}/{FreeCoopState.target_count}")
-            FreeCoopState.current_is_free = False
+        state = _get_free_coop_state(context, argv)
+        if state.current_is_free:
+            state.completed_count += 1
+            logger.info(f"完成一次无偿协助，当前进度: {state.completed_count}/{state.target_count}")
+            state.current_is_free = False
         try:
-            context.tasker.controller.post_click(640, 360).wait() #此处点击屏幕，若失败可能导致任务中断，需要进一步测试以修复
+            context.tasker.controller.post_click(640, 360).wait()  # 此处点击屏幕，若失败可能导致任务中断，需要进一步测试以修复
         except Exception as e:
-            logger.warning(f"战斗结束点击屏幕失败: {e}") #此处抛出异常，任务可能因此中断，需要进一步测试以修复
+            logger.warning(f"战斗结束点击屏幕失败: {e}")  # 此处抛出异常，任务可能因此中断，需要进一步测试以修复
         return True
