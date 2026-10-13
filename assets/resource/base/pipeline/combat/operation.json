@@ -423,7 +423,6 @@
         "next": [
             "猎影合围_协助_协助讨伐主界面",
             "[JumpBack]猎影合围_协助_点击进入协助讨伐" // 新赛季开始时初次进入界面会有一个弹窗把点击吃掉，这里做一个兜底
-
         ],
         "focus": {
             "Node.Action.Succeeded": "开始协助讨伐"
@@ -656,5 +655,312 @@
             "type": "Click"
         },
         "post_wait_freezes": 100
+    },
+    "猎影合围无偿协助_参数配置": {
+        "pre_delay": 0,
+        "post_delay": 0,
+        "attach": {
+            "free_coop_target_count": 5
+        }
+    },
+    "猎影合围无偿协助_入口": {
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "猎影合围无偿协助_初始化"
+        ]
+    },
+    "猎影合围无偿协助_初始化": {
+        "action": {
+            "type": "Custom",
+            "param": {
+                "custom_action": "free_coop_init"
+            }
+        },
+        "next": [
+            "猎影合围无偿协助_出发",
+            "猎影合围无偿协助_主界面",
+            "[JumpBack]通用_返回主页"
+        ]
+    },
+    "猎影合围无偿协助_出发": {
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "expected": [], //内容未知，需要补充
+                "roi": [
+                    1112,
+                    652,
+                    83,
+                    39
+                ]
+            }
+        },
+        "action": {
+            "type": "Click"
+        },
+        "next": [
+            "猎影合围无偿协助_出发主界面"
+        ]
+    },
+    "猎影合围无偿协助_出发主界面": {
+        "recognition": {
+            "type": "And",
+            "param": {
+                "all_of": [
+                    "猎影合围_点击入口图标"
+                ]
+            }
+        },
+        "post_wait_freezes": 100,
+        "next": [
+            "猎影合围无偿协助_点击入口图标"
+        ]
+    },
+    "猎影合围无偿协助_点击入口图标": {
+        "recognition": {
+            "type": "TemplateMatch",
+            "param": {
+                "template": [
+                    "operation/entry.png"
+                ],
+                "roi": [
+                    0,
+                    600,
+                    230,
+                    120
+                ]
+            }
+        },
+        "action": {
+            "type": "Click"
+        },
+        "next": [
+            "猎影合围无偿协助_主界面"
+        ]
+    },
+    "猎影合围无偿协助_主界面": {
+        "recognition": {
+            "type": "TemplateMatch",
+            "param": {
+                "template": [
+                    "operation/coop.png"
+                ],
+                "roi": [
+                    0,
+                    600,
+                    230,
+                    120
+                ]
+            }
+        },
+        "post_wait_freezes": 100,
+        "next": [
+            "[JumpBack]猎影合围无偿协助_协助讨伐",
+            "猎影合围无偿协助_任务完成"
+        ]
+    },
+    "猎影合围无偿协助_协助讨伐": {
+        "max_hit": 1,
+        "recognition": {
+            "type": "TemplateMatch",
+            "param": {
+                "template": [
+                    "operation/coop.png"
+                ],
+                "roi": [
+                    0,
+                    600,
+                    230,
+                    120
+                ]
+            }
+        },
+        "action": {
+            "type": "Click"
+        },
+        "post_wait_freezes": 100,
+        "next": [
+            "猎影合围无偿协助_协助讨伐主界面",
+            "[JumpBack]猎影合围_协助_点击进入协助讨伐"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "开始无偿协助讨伐"
+        }
+    },
+    "猎影合围无偿协助_协助讨伐主界面": {
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "expected": [], //内容未知，需要补充
+                "roi": [
+                    100,
+                    15,
+                    250,
+                    60
+                ]
+            }
+        },
+        "post_wait_freezes": 100,
+        "next": [
+            "猎影合围无偿协助_已完成退出",
+            "猎影合围无偿协助_点击协助",
+            "[JumpBack]猎影合围无偿协助_没有可以讨伐的目标",
+            "[JumpBack]猎影合围_关闭添加好友界面"
+        ]
+    },
+    "猎影合围无偿协助_已完成退出": {
+        "recognition": {
+            "type": "Custom",
+            "param": {
+                "custom_recognition": "free_coop_finish_recognition"
+            }
+        },
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "猎影合围无偿协助_任务完成",
+            "[JumpBack]猎影合围无偿协助_返回主界面",
+            "[JumpBack]猎影合围_关闭添加好友界面"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "无偿协助次数已达标，返回主界面"
+        }
+    },
+    "猎影合围无偿协助_点击协助": {
+        "recognition": {
+            "type": "Custom",
+            "param": {
+                "custom_recognition": "free_coop_button_recognition"
+            }
+        },
+        "pre_wait_freezes": 100,
+        "action": {
+            "type": "Click"
+        },
+        "next": [
+            "[JumpBack]选择纪录_进入主界面",
+            "猎影合围无偿协助_战斗结束"
+        ]
+    },
+    "猎影合围无偿协助_战斗结束": {
+        "recognition": {
+            "type": "And",
+            "param": {
+                "all_of": [
+                    "通用_点击空白处继续"
+                ]
+            }
+        },
+        "action": {
+            "type": "Custom",
+            "param": {
+                "custom_action": "free_coop_battle_finish"
+            }
+        },
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "猎影合围无偿协助_协助讨伐主界面",
+            "[JumpBack]通用_点击空白处继续",
+            "[JumpBack]猎影合围_围猎等级提升",
+            "[JumpBack]猎影合围_关闭添加好友界面"
+        ]
+    },
+    "猎影合围无偿协助_没有可以讨伐的目标": {
+        "recognition": {
+            "type": "And",
+            "param": {
+                "all_of": [
+                    "__猎影合围_协助_没有可以讨伐的目标"
+                ]
+            }
+        },
+        "pre_delay": 500,
+        "post_delay": 0,
+        "next": [
+            "猎影合围无偿协助_主界面等待",
+            "[JumpBack]猎影合围无偿协助_返回主界面"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "没有可以讨伐的目标，正在返回主界面"
+        }
+    },
+    "猎影合围无偿协助_主界面等待": {
+        "recognition": {
+            "type": "And",
+            "param": {
+                "all_of": [
+                    "猎影合围_主界面"
+                ]
+            }
+        },
+        "post_delay": 60000,
+        "next": [
+            "猎影合围无偿协助_进入协助讨伐"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "已返回主界面，等待1分钟刷新……"
+        }
+    },
+    "猎影合围无偿协助_进入协助讨伐": {
+        "recognition": {
+            "type": "TemplateMatch",
+            "param": {
+                "template": [
+                    "operation/coop.png"
+                ],
+                "roi": [
+                    0,
+                    600,
+                    230,
+                    120
+                ]
+            }
+        },
+        "action": {
+            "type": "Click"
+        },
+        "post_wait_freezes": 100,
+        "next": [
+            "猎影合围无偿协助_协助讨伐主界面"
+        ]
+    },
+    "猎影合围无偿协助_返回主界面": {
+        "recognition": {
+            "type": "And",
+            "param": {
+                "all_of": [
+                    "__猎影合围_返回"
+                ]
+            }
+        },
+        "action": {
+            "type": "Click",
+            "param": {
+                "target": [
+                    54,
+                    33,
+                    20,
+                    20
+                ]
+            }
+        },
+        "post_wait_freezes": 500
+    },
+    "猎影合围无偿协助_任务完成": {
+        "recognition": {
+            "type": "And",
+            "param": {
+                "all_of": [
+                    "猎影合围_主界面"
+                ]
+            }
+        },
+        "pre_delay": 0,
+        "post_delay": 0,
+        "focus": {
+            "Node.Action.Succeeded": "猎影合围无偿协助任务完成"
+        }
     }
 }

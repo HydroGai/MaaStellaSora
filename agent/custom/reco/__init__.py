@@ -8,5 +8,9 @@ __all__ = [
     "LackOfTrackingPermitRecognition",
     "EnoughHuntLicenseRecognition",
     "LackOfHuntLicenseRecognition",
-    "PotentialBagTestRecognition"
+    "PotentialBagTestRecognition",
+    "FreeCoopInit",
+    "FreeCoopFinishRecognition",
+    "FreeCoopButtonRecognition",
+    "FreeCoopBattleFinish"
 ]
