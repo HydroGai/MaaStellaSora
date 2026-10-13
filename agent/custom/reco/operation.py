@@ -140,16 +140,13 @@ class FreeCoopState:
     target_count: int = 5
     completed_count: int = 0
     current_is_free: bool = False
+    logged_finish: bool = False
 
 
 _context_coop_states: dict[Any, FreeCoopState] = {}
 
-
 def _get_free_coop_state(context: Context, argv: Any = None) -> FreeCoopState:
-    """获取当前任务上下文绑定的无偿协助运行状态。
-
-    优先依据当前任务的 task_id 或 context 句柄索引，避免多任务并发时共享类属性导致状态互相污染。
-    """
+    """获取当前任务上下文绑定的无偿协助运行状态。"""
     key = getattr(getattr(argv, "task_detail", None), "task_id", None)
     if key is None and hasattr(context, "_handle") and hasattr(context._handle, "value"):
         key = context._handle.value
@@ -182,6 +179,7 @@ class FreeCoopInit(CustomAction):
         state.target_count = max(1, target)
         state.completed_count = 0
         state.current_is_free = False
+        state.logged_finish = False
         logger.info(f"猎影合围无偿协助任务初始化，目标次数: {state.target_count}")
         return True
 
@@ -191,7 +189,9 @@ class FreeCoopFinishRecognition(CustomRecognition):
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> CustomRecognition.AnalyzeResult:  # 检查无偿协助是否已经达到目标次数
         state = _get_free_coop_state(context, argv)
         if state.completed_count >= state.target_count:
-            logger.info(f"无偿协助已达到目标次数 ({state.completed_count}/{state.target_count})，准备退出")
+            if not state.logged_finish:
+                logger.info(f"无偿协助已达到目标次数 ({state.completed_count}/{state.target_count})，准备退出")
+                state.logged_finish = True
             return CustomRecognition.AnalyzeResult(box=(1, 1, 1, 1), detail={})
         return CustomRecognition.AnalyzeResult(box=None, detail={})  # 未达到目标次数，继续追踪
 
