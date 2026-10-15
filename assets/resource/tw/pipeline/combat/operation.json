@@ -75,7 +75,15 @@
         "recognition": {
             "param": {
                 "expected": [
-                    "協助討伐",
+                    "協助討伐"
+                ]
+            }
+        }
+    },
+    "猎影合围_协助_点击无偿协助": {
+        "recognition": {
+            "param": {
+                "expected": [
                     "無償協助"
                 ]
             }
@@ -96,24 +104,6 @@
             "param": {
                 "expected": [
                     "跳過"
-                ]
-            }
-        }
-    },
-    "猎影合围无偿协助_出发": {
-        "recognition": {
-            "param": {
-                "expected": [
-                    "出發"
-                ]
-            }
-        }
-    },
-    "猎影合围无偿协助_协助讨伐主界面": {
-        "recognition": {
-            "param": {
-                "expected": [
-                    "協助討伐"
                 ]
             }
         }
